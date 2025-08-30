@@ -1,0 +1,11 @@
+{
+    "cli": { "version": ">= 3.21.0" },
+    "build": {
+      "preview": {
+        "android": { "buildType": "apk" },
+        "ios": { "simulator": false }
+      }
+    },
+    "submit": { "production": {} }
+  }
+  
