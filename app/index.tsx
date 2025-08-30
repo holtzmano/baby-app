@@ -76,8 +76,8 @@ export default function IndexScreen() {
               <Text style={styles.rowTitle}>{icon(item.type)} {item.type.toUpperCase()}</Text>
               <Text style={styles.rowSub}>{new Date(item.tsMs).toLocaleTimeString()}</Text>
               {item.type === 'note' && item.meta?.noteText ? <Text style={styles.rowNote}>{item.meta.noteText}</Text> : null}
-              {item.type === 'feed' && item.meta?.durationMs ? (
-                <Text style={styles.rowNote}>Duration: {Math.round((item.meta.durationMs as number) / 1000)}s</Text>
+              {item.type === 'feed' && typeof item.meta?.durationMs === 'number' ? (
+                <Text style={styles.rowNote}>Duration: {Math.round(item.meta.durationMs / 1000)}s</Text>
               ) : null}
             </View>
           )}
