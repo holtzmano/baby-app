@@ -52,7 +52,7 @@ export const useStore = create<Store>((set, get) => ({
     if (type === 'sleep') {
       insertEvent({ babyId: 'default', type: 'sleep', tsMs: startedAtMs })
         .then(() => get().refreshToday())
-        .catch(() => { /* noop for MVP */ });
+        .catch((err) => { console.error('Failed to insert sleep event or refresh:', err); });
     }
   },
 
