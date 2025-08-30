@@ -9,7 +9,7 @@ export interface EventDoc {
     noteText?: string;
     durationMs?: number;  // for feed duration on stop
     diaperType?: 'wet' | 'dirty' | 'both';
-  } | null;
+  };
   pendingSync?: 0 | 1;    // reserved for later
   deleted?: 0 | 1;        // reserved for later
   createdAtMs?: number;
