@@ -10,8 +10,8 @@ export interface EventDoc {
     durationMs?: number;  // for feed duration on stop
     diaperType?: 'wet' | 'dirty' | 'both';
   };
-  pendingSync?: 0 | 1;    // reserved for later
-  deleted?: 0 | 1;        // reserved for later
+  pendingSync?: boolean;    // reserved for later
+  deleted?: boolean;        // reserved for later
   createdAtMs?: number;
   updatedAtMs?: number;
 }
