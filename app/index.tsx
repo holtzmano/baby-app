@@ -1,9 +1,21 @@
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 
-export default function Home() {
+/**
+ * Index screen for Expo Router.
+ * Renders the initial greeting. No business logic here.
+ */
+export default function IndexScreen() {
   return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+    <View style={styles.container}>
       <Text>Hello Baby App 👶</Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
