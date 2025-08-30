@@ -26,6 +26,7 @@ export async function migrate(): Promise<void> {
       baby_id TEXT NOT NULL,
       type TEXT NOT NULL CHECK (type IN ('sleep','wake','feed','diaper','note')),
       ts_ms INTEGER NOT NULL,
+      -- JSON-encoded metadata for the event (e.g., additional event details)
       meta TEXT,
       pending_sync INTEGER NOT NULL DEFAULT 1,
       deleted INTEGER NOT NULL DEFAULT 0,
