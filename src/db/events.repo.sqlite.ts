@@ -67,7 +67,7 @@ function parseMeta(s: string): EventDoc['meta'] {
   try {
     const obj = JSON.parse(s);
     // If DB accidentally contains "null" as a stringified value, normalize to undefined
-    return obj ?? undefined;
+    return obj;
   } catch {
     return undefined;
   }
