@@ -1,11 +1,15 @@
-import { Stack } from "expo-router";
+import { Stack } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-/**
- * Root layout for Expo Router navigation stack.
- * Keeps headers hidden globally.
- */
+const screenOptions = { headerShown: false } as const;
+
 export default function RootLayout() {
-  return <Stack screenOptions={SCREEN_OPTIONS} />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack screenOptions={screenOptions} />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
 }
-
-const SCREEN_OPTIONS = { headerShown: false } as const;
