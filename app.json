@@ -8,6 +8,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
+    "plugins": [
+      "expo-router",
+      "expo-sqlite"
+    ],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,11 +20,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.holtzmano.babyapp",
-      "buildNumber": "1"
+      "buildNumber": "2"
     },
     "android": {
       "package": "com.holtzmano.babyapp",
-      "versionCode": 1,
+      "versionCode": 9,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -31,6 +35,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "router": {},
       "eas": {
         "projectId": "c06d0909-2ce8-4069-bef2-df9a28b948ee"
       }

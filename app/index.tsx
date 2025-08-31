@@ -117,3 +117,4 @@ const styles = StyleSheet.create({
   rowSub: { color: '#6b7280' },
   rowNote: { marginTop: 4 },
 });
+
