@@ -63,7 +63,7 @@ function RunningPill() {
 }
 
 export default function IndexScreen() {
-  const { events, timer, refreshToday, startTimer, stopTimer, logImmediate, saveNote } = useStore();
+  const { events, timer, refreshToday, startTimer, stopTimer, logImmediate, saveNote, deleteEvent, updateDiaper } = useStore();
   const [note, setNote] = useState('');
 
   // Boot: run DB migrations once, then init store (midnight auto-refresh + initial refresh)
