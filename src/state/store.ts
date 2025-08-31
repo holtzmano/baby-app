@@ -21,15 +21,25 @@ const nowMs = () => Date.now();
 let lastTapAt = 0;
 const TAP_GUARD_MS = 700;
 
+// Store the timeout ID for cleanup
+let midnightRefreshTimeout: ReturnType<typeof setTimeout> | null = null;
+
 function scheduleMidnightRefresh(refresh: () => Promise<void>) {
   const now = new Date();
   const next = new Date(now);
   next.setHours(24, 0, 0, 0);
   const delay = Math.max(1000, next.getTime() - now.getTime());
-  setTimeout(async () => {
+  midnightRefreshTimeout = setTimeout(async () => {
     await refresh();
     scheduleMidnightRefresh(refresh);
   }, delay);
+}
+
+function cleanupMidnightRefresh() {
+  if (midnightRefreshTimeout !== null) {
+    clearTimeout(midnightRefreshTimeout);
+    midnightRefreshTimeout = null;
+  }
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -37,6 +47,7 @@ export const useStore = create<Store>((set, get) => ({
   timer: undefined,
 
   _init: async () => {
+    cleanupMidnightRefresh();
     await get().refreshToday();
     scheduleMidnightRefresh(get().refreshToday);
   },
