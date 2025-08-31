@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, View, Text, Pressable, TextInput, FlatList, StyleSheet, PressableStateCallbackType, ListRenderItem } from 'react-native';
+import { SafeAreaView, View, Text, Pressable, TextInput, FlatList, StyleSheet, ListRenderItem } from 'react-native';
 import { migrate } from '../src/db/db';        // relative import
 import { useStore } from '../src/state/store'; // relative import
 import type { EventDoc, EventType } from '../src/core/models'; // relative import
