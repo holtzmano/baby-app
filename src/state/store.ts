@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { EventDoc, EventType } from '../core/models';
-import { insertEvent, listEventsToday } from '../db/events.repo.sqlite';
+import { insertEvent, listEventsToday, updateEventMeta, softDeleteEvent } from '../db/events.repo.sqlite';
 
 type TimerState = { type: 'sleep' | 'feed'; startedAtMs: number } | undefined;
 
@@ -12,6 +12,8 @@ type Store = {
   saveNote: (text: string) => Promise<void>;
   startTimer: (type: 'sleep' | 'feed') => void;
   stopTimer: () => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
+  updateDiaper: (id: string, diaperType: 'wet' | 'dirty' | 'both') => Promise<void>;
   _init: () => Promise<void>; // bootstrap: initial refresh + midnight auto-refresh
 };
 
@@ -21,25 +23,15 @@ const nowMs = () => Date.now();
 let lastTapAt = 0;
 const TAP_GUARD_MS = 700;
 
-// Store the timeout ID for cleanup
-let midnightRefreshTimeout: ReturnType<typeof setTimeout> | null = null;
-
 function scheduleMidnightRefresh(refresh: () => Promise<void>) {
   const now = new Date();
   const next = new Date(now);
   next.setHours(24, 0, 0, 0);
   const delay = Math.max(1000, next.getTime() - now.getTime());
-  midnightRefreshTimeout = setTimeout(async () => {
+  setTimeout(async () => {
     await refresh();
     scheduleMidnightRefresh(refresh);
   }, delay);
-}
-
-function cleanupMidnightRefresh() {
-  if (midnightRefreshTimeout !== null) {
-    clearTimeout(midnightRefreshTimeout);
-    midnightRefreshTimeout = null;
-  }
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -47,7 +39,6 @@ export const useStore = create<Store>((set, get) => ({
   timer: undefined,
 
   _init: async () => {
-    cleanupMidnightRefresh();
     await get().refreshToday();
     scheduleMidnightRefresh(get().refreshToday);
   },
@@ -111,6 +102,16 @@ export const useStore = create<Store>((set, get) => ({
     }
 
     set({ timer: undefined });
+    await get().refreshToday();
+  },
+
+  deleteEvent: async (id: string) => {
+    await softDeleteEvent(id);
+    await get().refreshToday();
+  },
+
+  updateDiaper: async (id, diaperType) => {
+    await updateEventMeta(id, { diaperType });
     await get().refreshToday();
   },
 }));
