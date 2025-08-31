@@ -118,23 +118,3 @@ const styles = StyleSheet.create({
   rowNote: { marginTop: 4 },
 });
 
-// import React, { useEffect } from 'react';
-// import { View, Text, Pressable, StyleSheet } from 'react-native';
-
-// export default function IndexScreen() {
-//   useEffect(() => console.log('Index mounted'), []);
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.title}>It works 🚀</Text>
-//       <Pressable onPress={() => console.log('Pressed')}>
-//         <Text style={styles.button}>Tap me</Text>
-//       </Pressable>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: '#0b0b0b', alignItems: 'center', justifyContent: 'center' },
-//   title: { color: 'white', fontSize: 24, marginBottom: 16 },
-//   button: { color: 'white', fontSize: 18, textDecorationLine: 'underline' },
-// });
