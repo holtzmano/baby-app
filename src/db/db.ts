@@ -4,11 +4,14 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 const DB_NAME = 'baby.db';
 
-let _dbPromise: Promise<SQLiteDatabase> | null = null;
+let _dbPromise: Promise<SQLiteDatabase> | undefined;
+
 /** Lazily open the database once and reuse it. */
 export function getDb(): Promise<SQLiteDatabase> {
-  if (!_dbPromise) _dbPromise = SQLite.openDatabaseAsync(DB_NAME);
-  return _dbPromise;
+  if (!_dbPromise) {
+    _dbPromise = SQLite.openDatabaseAsync(DB_NAME);
+  }
+  return _dbPromise!; // safe: we just ensured it's set
 }
 
 /** Single migration step definition. */

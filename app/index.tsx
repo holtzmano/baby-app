@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, View, Text, Pressable, TextInput, FlatList, StyleSheet } from 'react-native';
+import { SafeAreaView, View, Text, Pressable, TextInput, FlatList, StyleSheet, ListRenderItem } from 'react-native';
 import { migrate } from '../src/db/db';        // relative import
 import { useStore } from '../src/state/store'; // relative import
 import type { EventDoc, EventType } from '../src/core/models'; // relative import
@@ -70,8 +70,8 @@ export default function IndexScreen() {
         <Text style={styles.sectionTitle}>Today</Text>
         <FlatList<EventDoc>
           data={sorted}
-          keyExtractor={(i) => i.id}
-          renderItem={({ item }) => (
+          keyExtractor={(i: EventDoc) => i.id}
+          renderItem={({ item }: Parameters<ListRenderItem<EventDoc>>[0]) => (
             <View style={styles.row}>
               <Text style={styles.rowTitle}>{icon(item.type)} {item.type.toUpperCase()}</Text>
               <Text style={styles.rowSub}>{new Date(item.tsMs).toLocaleTimeString()}</Text>
