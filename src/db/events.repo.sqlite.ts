@@ -16,6 +16,23 @@ type DBRow = {
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
+type EventMeta = NonNullable<EventDoc['meta']>;
+
+function startOfLocalDayMs(when: number) {
+  const d = new Date(when);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function parseMeta(s: string): EventDoc['meta'] {
+  try {
+    const obj = JSON.parse(s);
+    return obj;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Insert a single event and return its generated id. */
 export async function insertEvent(
   e: Omit<EventDoc, 'id' | 'createdAtMs' | 'updatedAtMs' | 'pendingSync' | 'deleted'>
@@ -36,17 +53,34 @@ export async function insertEvent(
   return id;
 }
 
-/** List today's events (midnight → now) for the given baby, newest first. */
-export async function listEventsToday(babyId = 'default'): Promise<EventDoc[]> {
+/** Patch/merge meta JSON and update updated_at_ms. */
+export async function updateEventMeta(eventId: string, patch: Partial<EventMeta>): Promise<void> {
   const db = await getDb();
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+  const row = await db.getFirstAsync<{ meta: string | null }>(
+    'SELECT meta FROM events WHERE id = ?',
+    [eventId]
+  );
+  const current: EventMeta = row?.meta ? (JSON.parse(row.meta) as EventMeta) : {};
+  const next: EventMeta = { ...current, ...patch };
+  await db.runAsync('UPDATE events SET meta = ?, updated_at_ms = ? WHERE id = ?', [
+    JSON.stringify(next),
+    Date.now(),
+    eventId,
+  ]);
+}
 
+/** List events within [fromMs, toMs), newest first. */
+export async function listEventsRange(
+  babyId: string,
+  fromMs: number,
+  toMs: number
+): Promise<EventDoc[]> {
+  const db = await getDb();
   const rows = await db.getAllAsync<DBRow>(
     `SELECT * FROM events
-     WHERE baby_id = ? AND deleted = 0 AND ts_ms >= ?
+     WHERE baby_id = ? AND deleted = 0 AND ts_ms >= ? AND ts_ms < ?
      ORDER BY ts_ms DESC`,
-    [babyId, start.getTime()]
+    [babyId, fromMs, toMs]
   );
 
   return rows.map<EventDoc>((r) => ({
@@ -54,8 +88,7 @@ export async function listEventsToday(babyId = 'default'): Promise<EventDoc[]> {
     babyId: r.baby_id,
     type: r.type as EventType,
     tsMs: r.ts_ms,
-    // Map DB NULL → undefined to satisfy EventDoc.meta type
-    meta: r.meta ? parseMeta(r.meta) : undefined,
+    meta: r.meta ? parseMeta(r.meta) : undefined, // NULL → undefined
     pendingSync: r.pending_sync === 1,
     deleted: r.deleted === 1,
     createdAtMs: r.created_at_ms,
@@ -63,12 +96,9 @@ export async function listEventsToday(babyId = 'default'): Promise<EventDoc[]> {
   }));
 }
 
-function parseMeta(s: string): EventDoc['meta'] {
-  try {
-    const obj = JSON.parse(s);
-    // If DB accidentally contains "null" as a stringified value, normalize to undefined
-    return obj;
-  } catch {
-    return undefined;
-  }
+/** List today's events (>= local midnight, < next midnight), newest first. */
+export async function listEventsToday(babyId = 'default'): Promise<EventDoc[]> {
+  const from = startOfLocalDayMs(Date.now());
+  const to = from + 24 * 60 * 60 * 1000;
+  return listEventsRange(babyId, from, to);
 }

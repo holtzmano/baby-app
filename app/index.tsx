@@ -1,16 +1,36 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, View, Text, Pressable, TextInput, FlatList, StyleSheet, ListRenderItem } from 'react-native';
-import { migrate } from '../src/db/db';        // relative import
-import { useStore } from '../src/state/store'; // relative import
-import type { EventDoc, EventType } from '../src/core/models'; // relative import
+import {
+  SafeAreaView,
+  View,
+  Text,
+  Pressable,
+  TextInput,
+  FlatList,
+  StyleSheet,
+  ListRenderItem,
+  PressableStateCallbackType,
+} from 'react-native';
+import { migrate } from '../src/db/db';
+import { useStore } from '../src/state/store';
+import type { EventDoc, EventType } from '../src/core/models';
 
-
-const BigButton = ({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) => (
+const BigButton = ({
+  label,
+  onPress,
+  disabled = false,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) => (
   <Pressable
     onPress={onPress}
     disabled={disabled}
     hitSlop={8}
-    style={({ pressed }) => [styles.button, disabled ? styles.buttonDisabled : (pressed ? styles.buttonPressed : null)]}
+    style={({ pressed }: PressableStateCallbackType) => [
+      styles.button,
+      disabled ? styles.buttonDisabled : pressed ? styles.buttonPressed : null,
+    ]}
     accessibilityRole="button"
     accessibilityLabel={label}
   >
@@ -22,7 +42,13 @@ export default function IndexScreen() {
   const { events, timer, refreshToday, startTimer, stopTimer, logImmediate, saveNote } = useStore();
   const [note, setNote] = useState('');
 
-  useEffect(() => { migrate(); refreshToday(); }, [refreshToday]);
+  // Boot: run DB migrations once, then init store (midnight auto-refresh + initial refresh)
+  useEffect(() => {
+    (async () => {
+      await migrate();
+      await useStore.getState()._init();
+    })();
+  }, []);
 
   const sorted = useMemo(
     () => events.slice().sort((a: EventDoc, b: EventDoc) => b.tsMs - a.tsMs),
@@ -63,7 +89,15 @@ export default function IndexScreen() {
             style={styles.noteInput}
             multiline
           />
-          <BigButton label="Save Note" onPress={() => { if (note.trim()) { saveNote(note); setNote(''); } }} />
+          <BigButton
+            label="Save Note"
+            onPress={() => {
+              if (note.trim()) {
+                saveNote(note);
+                setNote('');
+              }
+            }}
+          />
         </View>
 
         {/* Timeline */}
@@ -73,9 +107,13 @@ export default function IndexScreen() {
           keyExtractor={(i: EventDoc) => i.id}
           renderItem={({ item }: Parameters<ListRenderItem<EventDoc>>[0]) => (
             <View style={styles.row}>
-              <Text style={styles.rowTitle}>{icon(item.type)} {item.type.toUpperCase()}</Text>
+              <Text style={styles.rowTitle}>
+                {icon(item.type)} {item.type.toUpperCase()}
+              </Text>
               <Text style={styles.rowSub}>{new Date(item.tsMs).toLocaleTimeString()}</Text>
-              {item.type === 'note' && item.meta?.noteText ? <Text style={styles.rowNote}>{item.meta.noteText}</Text> : null}
+              {item.type === 'note' && item.meta?.noteText ? (
+                <Text style={styles.rowNote}>{item.meta.noteText}</Text>
+              ) : null}
               {item.type === 'feed' && typeof item.meta?.durationMs === 'number' ? (
                 <Text style={styles.rowNote}>Duration: {Math.round(item.meta.durationMs / 1000)}s</Text>
               ) : null}
@@ -89,12 +127,18 @@ export default function IndexScreen() {
 
 function icon(t: EventType) {
   switch (t) {
-    case 'sleep': return '😴';
-    case 'wake': return '🌅';
-    case 'feed': return '🍼';
-    case 'diaper': return '🧷';
-    case 'note': return '📝';
-    default: return '•';
+    case 'sleep':
+      return '😴';
+    case 'wake':
+      return '🌅';
+    case 'feed':
+      return '🍼';
+    case 'diaper':
+      return '🧷';
+    case 'note':
+      return '📝';
+    default:
+      return '•';
   }
 }
 
@@ -103,18 +147,30 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
   stack: { marginBottom: 8 },
-  button: { backgroundColor: '#111827', paddingVertical: 16, paddingHorizontal: 16, borderRadius: 16, marginBottom: 12 },
+  button: {
+    backgroundColor: '#111827',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
   buttonPressed: { opacity: 0.8 },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: 'white', fontSize: 18, textAlign: 'center' },
   timerText: { marginBottom: 8, fontSize: 16 },
   noteBox: { marginTop: 8, marginBottom: 12 },
   noteLabel: { fontSize: 16, marginBottom: 6 },
-  noteInput: { borderWidth: 1, borderColor: '#e5e7eb', padding: 12, borderRadius: 12, marginBottom: 8, fontSize: 16 },
+  noteInput: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    fontSize: 16,
+  },
   sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
   row: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   rowTitle: { fontSize: 16, fontWeight: '600' },
   rowSub: { color: '#6b7280' },
   rowNote: { marginTop: 4 },
 });
-

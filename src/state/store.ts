@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { EventDoc, EventType } from '../core/models'; // use relative import unless you set up tsconfig paths
+import { EventDoc, EventType } from '../core/models';
 import { insertEvent, listEventsToday } from '../db/events.repo.sqlite';
 
 type TimerState = { type: 'sleep' | 'feed'; startedAtMs: number } | undefined;
@@ -12,13 +12,34 @@ type Store = {
   saveNote: (text: string) => Promise<void>;
   startTimer: (type: 'sleep' | 'feed') => void;
   stopTimer: () => Promise<void>;
+  _init: () => Promise<void>; // bootstrap: initial refresh + midnight auto-refresh
 };
 
 const nowMs = () => Date.now();
 
+// simple tap guard to prevent accidental duplicates
+let lastTapAt = 0;
+const TAP_GUARD_MS = 700;
+
+function scheduleMidnightRefresh(refresh: () => Promise<void>) {
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(24, 0, 0, 0);
+  const delay = Math.max(1000, next.getTime() - now.getTime());
+  setTimeout(async () => {
+    await refresh();
+    scheduleMidnightRefresh(refresh);
+  }, delay);
+}
+
 export const useStore = create<Store>((set, get) => ({
   events: [],
   timer: undefined,
+
+  _init: async () => {
+    await get().refreshToday();
+    scheduleMidnightRefresh(get().refreshToday);
+  },
 
   refreshToday: async () => {
     const events = await listEventsToday();
@@ -26,10 +47,14 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   logImmediate: async (type, meta) => {
+    const now = nowMs();
+    if (now - lastTapAt < TAP_GUARD_MS) return;
+    lastTapAt = now;
+
     await insertEvent({
       babyId: 'default',
       type,
-      tsMs: nowMs(),
+      tsMs: now,
       meta, // forward directly; undefined is fine
     });
     await get().refreshToday();
@@ -52,7 +77,9 @@ export const useStore = create<Store>((set, get) => ({
     if (type === 'sleep') {
       insertEvent({ babyId: 'default', type: 'sleep', tsMs: startedAtMs })
         .then(() => get().refreshToday())
-        .catch((err) => { console.error('Failed to insert sleep event or refresh:', err); });
+        .catch((err) => {
+          console.error('Failed to insert sleep event or refresh:', err);
+        });
     }
   },
 
