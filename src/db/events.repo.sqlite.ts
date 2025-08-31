@@ -102,3 +102,12 @@ export async function listEventsToday(babyId = 'default'): Promise<EventDoc[]> {
   const to = from + 24 * 60 * 60 * 1000;
   return listEventsRange(babyId, from, to);
 }
+
+/** Soft-delete an event by id. */
+export async function softDeleteEvent(eventId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('UPDATE events SET deleted = 1, updated_at_ms = ? WHERE id = ?', [
+    Date.now(),
+    eventId,
+  ]);
+}
