@@ -78,6 +78,9 @@ export async function migrate(): Promise<void> {
     await db.execAsync('BEGIN TRANSACTION;');
     try {
       await m.up(db);
+      if (!Number.isInteger(m.to) || !Number.isSafeInteger(m.to) || !isFinite(m.to)) {
+        throw new Error(`Migration 'to' value is not a safe integer: ${m.to}`);
+      }
       await db.execAsync(`PRAGMA user_version = ${m.to};`);
       await db.execAsync('COMMIT;');
     } catch (err) {
