@@ -124,7 +124,7 @@ export default function Stats() {
             <Text style={s.day}>{item.date.toDateString()}</Text>
             <Text>🛌 Sleep: {Math.floor(item.sleepMin / 60)}h {item.sleepMin % 60}m</Text>
             <Text>🍼 Feeds: {item.feeds} (avg {item.feedAvgMin}m)</Text>
-            <Text>🧷 Diapers — wet {item.wet}, 💩 dirty {item.dirty}, both {item.both}</Text>
+            <Text>🧷 Diapers - wet {item.wet}, 💩 dirty {item.dirty}, both {item.both}</Text>
           </View>
         )}
       />
