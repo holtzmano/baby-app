@@ -14,6 +14,7 @@ import {
 import { migrate } from '../src/db/db';
 import { useStore } from '../src/state/store';
 import type { EventDoc, EventType } from '../src/core/models';
+import { Link } from 'expo-router';
 
 const BigButton = ({
   label,
@@ -82,7 +83,10 @@ export default function IndexScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        <Text style={styles.title}>Baby Tracker 👶</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={styles.title}>Baby Tracker 👶</Text>
+          <Link href="/stats" style={{ fontWeight: '700' }}>📈 Weekly</Link>
+        </View>
 
         {/* Two-column action layout (always visible; timer pill floats) */}
         <View style={styles.grid}>
