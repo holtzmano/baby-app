@@ -50,7 +50,6 @@ export default function Stats() {
 
       // seed carry-in: if the first event is a wake, assume asleep since day0
       if (evts.length && evts[0].type === 'wake') {
-        asleepAt = day0;
         sleepMin += Math.max(0, (evts[0].tsMs - day0) / 60000);
         asleepAt = null;
       }
