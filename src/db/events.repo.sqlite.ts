@@ -111,3 +111,35 @@ export async function softDeleteEvent(eventId: string): Promise<void> {
     eventId,
   ]);
 }
+
+/** List all pending-to-sync events for a baby, oldest first. */
+export async function listPendingEvents(babyId = 'default'): Promise<EventDoc[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<DBRow>(
+    `SELECT * FROM events WHERE baby_id = ? AND deleted = 0 AND pending_sync = 1 ORDER BY ts_ms ASC`,
+    [babyId]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    babyId: r.baby_id,
+    type: r.type as EventType,
+    tsMs: r.ts_ms,
+    meta: r.meta ? parseMeta(r.meta) : undefined,
+    pendingSync: r.pending_sync === 1,
+    deleted: r.deleted === 1,
+    createdAtMs: r.created_at_ms,
+    updatedAtMs: r.updated_at_ms,
+  }));
+}
+
+/** Mark a set of events as synced by id. No-op if ids is empty. */
+export async function markSynced(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  const db = await getDb();
+  const now = Date.now();
+  const placeholders = ids.map(() => '?').join(',');
+  await db.runAsync(
+    `UPDATE events SET pending_sync = 0, updated_at_ms = ? WHERE id IN (${placeholders})`,
+    [now, ...ids]
+  );
+}
