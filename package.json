@@ -10,6 +10,13 @@
     "start:clean": "expo start -c",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "doctor": "expo-doctor",
+    "dev:go:lan": "expo start -c --host lan",
+    "dev:go:tunnel": "expo start -c --host tunnel",
+    "dev:go:prod": "expo start -c --host lan --no-dev --minify",
+    "dev:client:lan": "expo start -c --dev-client --host lan",
+    "dev:client:tunnel": "expo start -c --dev-client --host tunnel",
+    "dev:client:prod": "expo start -c --dev-client --host lan --no-dev --minify",
+    "dev:client:tunnel:prod": "expo start -c --dev-client --host tunnel --no-dev --minify",
     "build:dev": "eas build -p android --profile dev",
     "build:preview": "eas build -p android --profile preview"
   },
@@ -28,7 +35,9 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "zod": "^4.1.5",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "react-dom": "19.0.0",
+    "react-native-web": "0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
