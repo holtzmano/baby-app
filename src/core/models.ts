@@ -1,3 +1,4 @@
+// src/core/models.ts
 export type EventType = 'sleep' | 'wake' | 'feed' | 'diaper' | 'note';
 
 export interface EventDoc {
@@ -7,11 +8,12 @@ export interface EventDoc {
   tsMs: number;           // epoch ms
   meta?: {
     noteText?: string;
-    durationMs?: number;  // for feed duration on stop
+    durationMs?: number;         // for feed duration; and for sleep duration on wake
     diaperType?: 'wet' | 'dirty' | 'both';
+    intervalStartMs?: number;    // NEW: when meta.durationMs refers to an interval (sleep), this is the start
   };
-  pendingSync?: boolean;    // reserved for later
-  deleted?: boolean;        // reserved for later
+  pendingSync?: boolean;
+  deleted?: boolean;
   createdAtMs?: number;
   updatedAtMs?: number;
 }

@@ -1,8 +1,11 @@
+// src/state/store.ts
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { EventDoc, EventType } from '../core/models';
 import { insertEvent, listEventsToday, updateEventMeta, softDeleteEvent } from '../db/events.repo.sqlite';
 
-type TimerState = { type: 'sleep' | 'feed'; startedAtMs: number } | undefined;
+type RunningTimer = { type: 'sleep' | 'feed'; startedAtMs: number };
+type TimerState = RunningTimer | undefined;
 
 type Store = {
   events: EventDoc[];
@@ -10,16 +13,17 @@ type Store = {
   refreshToday: () => Promise<void>;
   logImmediate: (type: Exclude<EventType, 'note' | 'feed'>, meta?: EventDoc['meta']) => Promise<void>;
   saveNote: (text: string) => Promise<void>;
-  startTimer: (type: 'sleep' | 'feed') => void;
+  startTimer: (type: 'sleep' | 'feed') => Promise<void>;
   stopTimer: () => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
   updateDiaper: (id: string, diaperType: 'wet' | 'dirty' | 'both') => Promise<void>;
-  _init: () => Promise<void>; // bootstrap: initial refresh + midnight auto-refresh
+  _init: () => Promise<void>;
 };
 
 const nowMs = () => Date.now();
+const TIMER_KEY = '@babyapp/timer';
 
-// simple tap guard to prevent accidental duplicates
+// simple tap guard
 let lastTapAt = 0;
 const TAP_GUARD_MS = 700;
 
@@ -34,11 +38,32 @@ function scheduleMidnightRefresh(refresh: () => Promise<void>) {
   }, delay);
 }
 
+async function loadTimer(): Promise<RunningTimer | undefined> {
+  try {
+    const s = await AsyncStorage.getItem(TIMER_KEY);
+    return s ? (JSON.parse(s) as RunningTimer) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+async function saveTimer(t?: RunningTimer) {
+  try {
+    if (!t) await AsyncStorage.removeItem(TIMER_KEY);
+    else await AsyncStorage.setItem(TIMER_KEY, JSON.stringify(t));
+  } catch {
+    // ignore
+  }
+}
+
 export const useStore = create<Store>((set, get) => ({
   events: [],
   timer: undefined,
 
   _init: async () => {
+    // recover any running timer from storage
+    const t = await loadTimer();
+    if (t) set({ timer: t });
+
     await get().refreshToday();
     scheduleMidnightRefresh(get().refreshToday);
   },
@@ -57,7 +82,7 @@ export const useStore = create<Store>((set, get) => ({
       babyId: 'default',
       type,
       tsMs: now,
-      meta, // forward directly; undefined is fine
+      meta,
     });
     await get().refreshToday();
   },
@@ -73,15 +98,17 @@ export const useStore = create<Store>((set, get) => ({
     await get().refreshToday();
   },
 
-  startTimer: (type) => {
+  startTimer: async (type) => {
     const startedAtMs = nowMs();
-    set({ timer: { type, startedAtMs } });
+    const running: RunningTimer = { type, startedAtMs };
+    set({ timer: running });
+    await saveTimer(running);
+
     if (type === 'sleep') {
+      // write the sleep start immediately (append-only)
       insertEvent({ babyId: 'default', type: 'sleep', tsMs: startedAtMs })
         .then(() => get().refreshToday())
-        .catch((err) => {
-          console.error('Failed to insert sleep event or refresh:', err);
-        });
+        .catch((err) => console.error('Failed to insert sleep start:', err));
     }
   },
 
@@ -89,23 +116,36 @@ export const useStore = create<Store>((set, get) => ({
     const t = get().timer;
     if (!t) return;
 
-    if (t.type === 'sleep') {
-      await insertEvent({ babyId: 'default', type: 'wake', tsMs: nowMs() });
-    } else {
-      const durationMs = Math.max(0, nowMs() - t.startedAtMs);
-      await insertEvent({
-        babyId: 'default',
-        type: 'feed',
-        tsMs: nowMs(),
-        meta: { durationMs },
-      });
-    }
+    try {
+      if (t.type === 'sleep') {
+        const end = nowMs();
+        const durationMs = Math.max(0, end - t.startedAtMs);
 
-    set({ timer: undefined });
-    await get().refreshToday();
+        // record wake with duration + intervalStartMs so stats can slice across days
+        await insertEvent({
+          babyId: 'default',
+          type: 'wake',
+          tsMs: end,
+          meta: { durationMs, intervalStartMs: t.startedAtMs },
+        });
+      } else {
+        // feed
+        const durationMs = Math.max(0, nowMs() - t.startedAtMs);
+        await insertEvent({
+          babyId: 'default',
+          type: 'feed',
+          tsMs: nowMs(),
+          meta: { durationMs },
+        });
+      }
+    } finally {
+      set({ timer: undefined });
+      await saveTimer(undefined);
+      await get().refreshToday();
+    }
   },
 
-  deleteEvent: async (id: string) => {
+  deleteEvent: async (id) => {
     await softDeleteEvent(id);
     await get().refreshToday();
   },
