@@ -15,6 +15,7 @@ import { migrate } from '../src/db/db';
 import { useStore } from '../src/state/store';
 import type { EventDoc, EventType } from '../src/core/models';
 import { Link } from 'expo-router';
+import { ActionGrid } from '../src/ui/ActionGrid';
 
 const BigButton = ({
   label,
@@ -88,20 +89,8 @@ export default function IndexScreen() {
           <Link href="/stats" style={{ fontWeight: '700' }}>📈 Weekly</Link>
         </View>
 
-        {/* Two-column action layout (always visible; timer pill floats) */}
-        <View style={styles.grid}>
-          <View style={styles.col}>
-            <BigButton label="Start Sleep 😴" onPress={() => startTimer('sleep')} />
-            <BigButton label="Log Wake 🌅" onPress={() => logImmediate('wake')} />
-          </View>
-          <View style={styles.col}>
-            <BigButton label="Start Feed 🍼" onPress={() => startTimer('feed')} />
-            <BigButton
-              label="Log Diaper 🧷"
-              onPress={() => logImmediate('diaper', { diaperType: 'wet' })}
-            />
-          </View>
-        </View>
+        {/* PRIMARY ACTIONS */}
+        <ActionGrid />
 
         {/* Notes */}
         <View style={styles.noteBox}>
